@@ -3,39 +3,27 @@ from sklearn.metrics import accuracy_score
 from sklearn.model_selection import train_test_split
 import numpy as np
 import pandas as pd
-import csv
 
 X_train = pd.read_csv("data/train_data.csv", sep=",", header=None)
 X_validation = pd.read_csv("data/test_data.csv", sep=",", header=None)
 y_train = pd.read_csv("data/train_labels.csv", sep=",", header=None)
 
-"""
-X_harjoitus, X_testi, y_harjoitus, y_testi = train_test_split(X_train, y_train, train_size=0.9, test_size=0.1, random_state=12)
+'''
+train, test, t_train, t_test = train_test_split(X_train, y_train, test_size=0.33)
 clf = LogisticRegression()
-clf.fit(X_harjoitus, y_harjoitus.values.ravel())
-y_pred = clf.predict(X_testi)
-print(accuracy_score(y_pred, y_testi))
-print(y_pred)
-"""
+clf.fit(train, t_train.values.ravel())
+print(clf.score(test, t_test))
+exit()
+'''
 
 clf = LogisticRegression()
 clf.fit(X_train, y_train.values.ravel())
 y_prediction = clf.predict(X_validation)
-y_list = np.arange(6544)
+prob = clf.predict_proba(X_validation)
 
-prob= clf.predict_proba(X_validation)
+df = pd.DataFrame({'Sample_id':np.arange(1, 6545), 'Sample_label':y_prediction})
+df.to_csv("results/accuracy_log_res.csv", index=False)
 
-with open('accuracy2.csv', 'w', newline='') as csvfile:
-    write = csv.writer(csvfile, delimiter=',', quotechar='|', quoting=csv.QUOTE_MINIMAL)
-    write.writerow(['Sample_id']+['Sample_label'])
-    for i in range(1,6545):
-        write.writerow([i] + [y_prediction[i-1]])
-
-with open('logloss2.csv', 'w', newline='') as csvfile:
-    write = csv.writer(csvfile, delimiter='#',escapechar=' ', quoting=csv.QUOTE_NONE)
-    write.writerow(['Sample_id,Class_1,Class_2,Class_3,Class_4,Class_5,Class_6,Class_7,Class_8,Class_9,Class_10'])
-    for i,p_row in enumerate(prob):
-        a = str(i+1)
-        for k in p_row:
-            a += "," + str(k)
-        write.writerow([a])
+df = pd.DataFrame(prob, columns=['Class_{}'.format(i+1) for i in range(10)])
+df.insert(loc=0, column='Sample_id', value=np.arange(1, 6545))
+df.to_csv("results/logloss_log_res.csv", index=False)
